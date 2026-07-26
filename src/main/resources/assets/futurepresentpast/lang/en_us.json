@@ -1,0 +1,13 @@
+{
+  "itemGroup.futurepresentpast": "Example Mod Tab",
+  "block.futurepresentpast.example_block": "Example Block",
+  "item.futurepresentpast.example_item": "Example Item",
+
+  "futurepresentpast.configuration.title": "Future-present-past Configs",
+  "futurepresentpast.configuration.section.futurepresentpast.common.toml": "Future-present-past Configs",
+  "futurepresentpast.configuration.section.futurepresentpast.common.toml.title": "Future-present-past Configs",
+  "futurepresentpast.configuration.items": "Item List",
+  "futurepresentpast.configuration.logDirtBlock": "Log Dirt Block",
+  "futurepresentpast.configuration.magicNumberIntroduction": "Magic Number Text",
+  "futurepresentpast.configuration.magicNumber": "Magic Number"
+}
