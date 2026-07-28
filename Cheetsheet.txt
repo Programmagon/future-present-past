@@ -1,0 +1,695 @@
+===============================================================
+ NEOFORGE 1.21.1 – ITEMS & BLOCKS REGISTRIEREN (CHEATSHEET)
+ Projekt: futurepresentpast
+ Alles passiert in: Futurepresentpast.java
+===============================================================
+
+GRUNDPRINZIP
+------------
+Du sagst NeoForge NICHT direkt "erstelle jetzt ein Item".
+Du sagst: "ITEMS.register(...)" - das ist ein VERSPRECHEN,
+das NeoForge erst zum richtigen Zeitpunkt beim Modstart einlöst.
+Deshalb "Deferred" (= aufgeschoben) Register.
+
+Die zwei zentralen Register sind schon oben in der Klasse angelegt:
+
+    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
+
+Die brauchst du nur EINMAL pro Mod. Nicht neu anlegen, nicht kopieren.
+
+
+===============================================================
+1) EIN NEUES ITEM HINZUFÜGEN (ohne Block dahinter, z.B. ein
+   Schwert, ein Zauberstab, eine Zutat)
+===============================================================
+
+SCHABLONE:
+
+    public static final DeferredItem<Item> DEIN_ITEM_NAME =
+            ITEMS.registerSimpleItem("dein_item_id", new Item.Properties());
+
+WAS DU ÄNDERST:
+  - DEIN_ITEM_NAME   -> Java-Variablenname, GROSS_MIT_UNTERSTRICH
+                        (nur für deinen Code, Minecraft sieht das nie)
+  - "dein_item_id"   -> die tatsächliche Item-ID im Spiel,
+                        klein_mit_unterstrich, KEINE Leerzeichen/Umlaute
+                        (das taucht z.B. in /give-Befehlen auf:
+                         /give @s futurepresentpast:dein_item_id)
+
+BEISPIEL AUS DEINEM PROJEKT (bereits vorhanden):
+
+    public static final DeferredItem<Item> TEST_ITEM =
+            ITEMS.registerSimpleItem("test_item", new Item.Properties());
+
+
+OPTIONALE EIGENSCHAFTEN (in die Klammer von .Properties() reinketten):
+
+    new Item.Properties().stacksTo(16)              // max. Stack-Größe
+    new Item.Properties().durability(250)           // Haltbarkeit (Werkzeuge/Waffen)
+    new Item.Properties().rarity(Rarity.EPIC)        // Seltenheits-Farbe im Namen
+    new Item.Properties().fireResistant()           // verbrennt nicht in Lava
+
+
+===============================================================
+2) EIN NEUER BLOCK (plus das Item, um ihn zu platzieren)
+===============================================================
+
+Ein Block braucht IMMER zwei Zeilen: den Block selbst,
+und ein "BlockItem" (damit du ihn überhaupt ins Inventar
+legen und platzieren kannst).
+
+SCHABLONE:
+
+    public static final DeferredBlock<Block> DEIN_BLOCK_NAME =
+            BLOCKS.registerSimpleBlock(
+                    "dein_block_id",
+                    BlockBehaviour.Properties.of()
+                            .mapColor(MapColor.STONE)
+            );
+
+    public static final DeferredItem<BlockItem> DEIN_BLOCK_NAME_ITEM =
+            ITEMS.registerSimpleBlockItem("dein_block_id", DEIN_BLOCK_NAME);
+
+
+BEISPIEL AUS DEINEM PROJEKT (dein "ruby_block" - eigentlich dein Übungsblock):
+
+    public static final DeferredBlock<Block> RUBY_BLOCK =
+            BLOCKS.registerSimpleBlock("ruby_block", BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_RED)
+                    .strength(5.0F, 6.0F)
+                    .requiresCorrectToolForDrops());
+
+    public static final DeferredItem<BlockItem> RUBY_BLOCK_ITEM =
+            ITEMS.registerSimpleBlockItem("ruby_block", RUBY_BLOCK);
+
+
+OPTIONALE BLOCK-EIGENSCHAFTEN:
+
+    .mapColor(MapColor.COLOR_RED)          // Farbe auf der Karte
+    .strength(5.0F, 6.0F)                  // (Abbauzeit, Explosionsresistenz)
+    .requiresCorrectToolForDrops()         // nur mit richtigem Werkzeug abbaubar
+    .sound(SoundType.METAL)                // Schritt-/Abbau-Geräusch
+    .lightLevel(state -> 15)               // leuchtet wie eine Fackel (0-15)
+    .noOcclusion()                         // für durchsichtige Blöcke (Glas etc.)
+
+
+===============================================================
+3) NEUEN BLOCK/ITEM UMBENENNEN (z.B. RUBY_BLOCK -> MEIN_TEST_BLOCK)
+===============================================================
+
+Umbenennen betrifft IMMER 3 Stellen gleichzeitig, sonst passt's
+nicht mehr zusammen:
+
+  a) Java-Variablenname:     RUBY_BLOCK        -> MEIN_TEST_BLOCK
+  b) Item-ID im Spiel:       "ruby_block"      -> "mein_test_block"
+  c) Übersetzung (Anzeigename), siehe Punkt 5 unten
+
+In VS Code: Rechtsklick auf den Variablennamen -> "Rename Symbol"
+(oder F2-Taste) benennt automatisch ALLE Stellen im Code um,
+wo die Variable verwendet wird - sicherer als von Hand suchen.
+Die ID in Anführungszeichen ("ruby_block") musst du per Hand
+mit Strg+H (Suchen & Ersetzen) anpassen, das erkennt "Rename Symbol" nicht.
+
+
+===============================================================
+4) DAMIT ES IM KREATIV-INVENTAR AUFTAUCHT
+===============================================================
+
+Neue Items/Blöcke erscheinen NICHT automatisch im Inventar.
+Du musst sie in addCreative() eintragen:
+
+    private void addCreative(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
+            event.accept(DEIN_BLOCK_NAME_ITEM);   // Blöcke hier rein
+        }
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
+            event.accept(DEIN_ITEM_NAME);         // reine Items hier rein
+        }
+    }
+
+Andere nützliche Tabs zum Reinsortieren:
+    CreativeModeTabs.COMBAT           - Waffen, Rüstung
+    CreativeModeTabs.TOOLS_AND_UTILITIES - Werkzeuge
+    CreativeModeTabs.FOOD_AND_DRINKS  - Essen
+    CreativeModeTabs.NATURAL_BLOCKS   - Stein, Erde, Holz etc.
+
+ODER: Du packst es in deinen eigenen Tab (EXAMPLE_TAB), dann
+taucht es in deinem eigenen Mod-Reiter auf statt in Vanilla-Tabs -
+siehe .displayItems(...) weiter oben in der Datei.
+
+
+===============================================================
+5) ANZEIGENAME FESTLEGEN (sonst steht nur "item.futurepresentpast.xyz"
+   im Spiel statt eines echten Namens)
+===============================================================
+
+Datei: src/main/resources/assets/futurepresentpast/lang/en_us.json
+
+Dort eine Zeile pro Item/Block hinzufügen:
+
+    "item.futurepresentpast.dein_item_id": "Dein Anzeigename",
+    "block.futurepresentpast.dein_block_id": "Dein Blockname",
+
+Wichtig: Kommas nicht vergessen zwischen den Zeilen (außer bei der
+allerletzten Zeile vor der schließenden geschweiften Klammer).
+
+
+===============================================================
+6) NACH JEDER ÄNDERUNG: TESTEN
+===============================================================
+
+Terminal im Projektordner:
+
+    .\gradlew runClient
+
+Im Kreativmodus: passenden Tab öffnen (Baublöcke/Zutaten/eigener Tab),
+durchscrollen oder Suchleiste (Lupe oben) nutzen und den
+Anzeigenamen eintippen.
+
+Alternativ direkt per Befehl im Spiel (Cheats müssen an sein):
+
+    /give @s futurepresentpast:dein_item_id
+
+
+===============================================================
+HÄUFIGSTE FEHLER (aus eigener Erfahrung in diesem Projekt)
+===============================================================
+- Zwei Register für dasselbe Item/denselben Block anlegen
+  -> "Duplicate registration"-Crash. Es gibt nur EIN ITEMS-
+  und EIN BLOCKS-Register pro Mod, ganz oben in Futurepresentpast.java.
+
+- Neue Datei ohne "public class XYZ { ... }"-Hülle anlegen
+  -> kompiliert gar nicht. Jede .java-Datei braucht genau eine
+  öffentliche Klasse, die den gleichen Namen wie die Datei trägt.
+
+- Geschweifte Klammer zu früh/spät gesetzt
+  -> in VS Code hilft es, auf eine öffnende { zu klicken:
+  die zugehörige schließende } wird kurz hervorgehoben.
+  Zähl im Zweifel Klammern nach, bevor du speicherst.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  # NeoForge 1.21.1 Cheat Sheet
+
+========================================
+
+1. MOD-KLASSE
+   ========================================
+
+```java
+@Mod(MyMod.MODID)
+public class MyMod {
+
+    public static final String MODID = "mymod";
+
+    public MyMod(IEventBus modEventBus, ModContainer modContainer) {
+
+        ModBlocks.register(modEventBus);
+        ModItems.register(modEventBus);
+        ModCreativeTabs.register(modEventBus);
+
+    }
+}
+```
+
+========================================
+2. BLOCKS
+=========
+
+Block registrieren
+
+```java
+public static final DeferredBlock<Block> RUBY_BLOCK =
+    BLOCKS.registerSimpleBlock(
+        "ruby_block",
+        BlockBehaviour.Properties.of()
+            .strength(5f)
+            .requiresCorrectToolForDrops()
+    );
+```
+
+Block mit Eigenschaften
+
+* strength()
+* explosionResistance()
+* mapColor()
+* sound()
+* lightLevel()
+* noOcclusion()
+* friction()
+* speedFactor()
+* jumpFactor()
+
+========================================
+3. BLOCK ITEM
+=============
+
+```java
+public static final DeferredItem<BlockItem> RUBY_BLOCK_ITEM =
+    ITEMS.registerSimpleBlockItem("ruby_block", RUBY_BLOCK);
+```
+
+========================================
+4. ITEMS
+========
+
+Normales Item
+
+```java
+new Item(new Item.Properties())
+```
+
+Max Stack Size
+
+```java
+new Item.Properties().stacksTo(16)
+```
+
+Feuerresistent
+
+```java
+new Item.Properties().fireResistant()
+```
+
+Seltenheit
+
+```java
+new Item.Properties().rarity(Rarity.EPIC)
+```
+
+========================================
+5. FOOD
+=======
+
+```java
+new Item.Properties().food(
+    new FoodProperties.Builder()
+        .nutrition(4)
+        .saturationModifier(0.4f)
+        .alwaysEdible()
+        .build()
+)
+```
+
+========================================
+6. CREATIVE TAB
+===============
+
+```java
+CreativeModeTab.builder()
+.title(Component.translatable("itemGroup.mymod"))
+.icon(() -> ITEM.get().getDefaultInstance())
+.displayItems((params, output)->{
+    output.accept(ITEM.get());
+})
+.build();
+```
+
+========================================
+7. EVENTS
+=========
+
+```java
+@SubscribeEvent
+public void onServerStarting(ServerStartingEvent event){
+
+}
+```
+
+Weitere Events
+
+PlayerJoin
+
+LivingDeathEvent
+
+PlayerTickEvent
+
+BreakEvent
+
+PlaceEvent
+
+RightClickBlock
+
+EntityJoinLevelEvent
+
+========================================
+8. LOGGER
+=========
+
+```java
+LOGGER.info("Hallo");
+LOGGER.warn("Warnung");
+LOGGER.error("Fehler");
+```
+
+========================================
+9. TEXT
+=======
+
+```java
+Component.literal("Hallo")
+
+Component.translatable("text.mymod.test")
+```
+
+========================================
+10. BLÖCKEIGENSCHAFTEN
+======================
+
+```java
+BlockBehaviour.Properties.of()
+
+.strength()
+
+.mapColor()
+
+.sound()
+
+.lightLevel()
+
+.noOcclusion()
+
+.randomTicks()
+
+.destroyTime()
+
+.requiresCorrectToolForDrops()
+
+.friction()
+
+.speedFactor()
+
+.jumpFactor()
+```
+
+========================================
+11. ITEMS-EIGENSCHAFTEN
+=======================
+
+```java
+.stacksTo()
+
+.food()
+
+.fireResistant()
+
+.rarity()
+
+.durability()
+```
+
+========================================
+12. HÄUFIGE KLASSEN
+===================
+
+Block
+
+BlockItem
+
+Item
+
+CreativeModeTab
+
+Component
+
+Level
+
+Player
+
+Entity
+
+BlockPos
+
+Direction
+
+ItemStack
+
+========================================
+13. WICHTIGE ORDNER
+===================
+
+src/main/java
+
+src/main/resources
+
+assets
+
+data
+
+META-INF
+
+========================================
+14. assets
+==========
+
+assets/modid/
+
+blockstates/
+
+models/
+
+textures/
+
+lang/
+
+sounds/
+
+========================================
+15. data
+========
+
+loot_tables/
+
+recipes/
+
+tags/
+
+advancements/
+
+worldgen/
+
+========================================
+16. JSON DATEIEN
+================
+
+blockstates
+
+models
+
+recipes
+
+loot tables
+
+tags
+
+sounds.json
+
+pack.mcmeta
+
+========================================
+17. REZEPTE
+===========
+
+Shaped
+
+Shapeless
+
+Smelting
+
+Blasting
+
+Smoking
+
+Stonecutting
+
+Smithing
+
+========================================
+18. TAGS
+========
+
+blocks
+
+items
+
+fluids
+
+entity_types
+
+========================================
+19. ENTITIES
+============
+
+Eigene
+
+Monster
+
+Tiere
+
+Projektile
+
+Boss
+
+========================================
+20. MENÜS
+=========
+
+Screen
+
+Menu
+
+Container
+
+Slot
+
+========================================
+21. GUI
+=======
+
+Buttons
+
+Labels
+
+Images
+
+Progress Bars
+
+Inventory
+
+========================================
+22. SOUNDS
+==========
+
+SoundEvent
+
+sounds.json
+
+ogg-Dateien
+
+========================================
+23. PARTIKEL
+============
+
+Eigene Partikel
+
+Block-Partikel
+
+Item-Partikel
+
+========================================
+24. BIOME
+=========
+
+Eigene Biome
+
+Features
+
+Placed Features
+
+Configured Features
+
+========================================
+25. WORLDGEN
+============
+
+Ore
+
+Trees
+
+Structures
+
+Vegetation
+
+========================================
+26. DATAGEN
+===========
+
+Loot Tables
+
+Rezepte
+
+Tags
+
+Modelle
+
+Sprachen
+
+========================================
+27. NÜTZLICHE METHODEN
+======================
+
+```java
+player.sendSystemMessage(...)
+
+level.setBlock(...)
+
+level.destroyBlock(...)
+
+level.getBlockState(...)
+
+player.getInventory()
+
+itemStack.shrink(1)
+
+itemStack.grow(1)
+```
+
+========================================
+28. HÄUFIGE EVENTS
+==================
+
+ServerStartingEvent
+
+PlayerEvent
+
+BreakEvent
+
+PlaceEvent
+
+LivingDeathEvent
+
+EntityJoinLevelEvent
+
+TickEvent
+
+========================================
+29. DEBUG
+=========
+
+```java
+LOGGER.info("Debug");
+
+System.out.println("Debug");
+```
+
+========================================
+30. BUILD
+=========
+
+Client starten
+
+gradlew runClient
+
+Server starten
+
+gradlew runServer
+
+Build
+
+gradlew build
+
+Clean
+
+gradlew clean
