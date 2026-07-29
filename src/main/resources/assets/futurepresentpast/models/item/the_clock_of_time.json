@@ -1,0 +1,7 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "futurepresentpast:item/the_clock_of_time"
+    }
+
+}
