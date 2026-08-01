@@ -51,10 +51,6 @@ public class ModCreativeTabs {
                                                 ModItems.THE_CLOCK_OF_TIME.get()
                                         );
 
-                                        output.accept(
-                                                ModBlocks.RUBY_BLOCK_ITEM.get()
-                                        );
-
                                     }
                             )
 
