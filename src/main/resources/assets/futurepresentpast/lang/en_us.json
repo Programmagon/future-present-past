@@ -1,6 +1,7 @@
 {
   "itemGroup.futurepresentpast": "Future-present-past",
   "item.futurepresentpast.the_clock_of_time": "The Clock of Time",
+  "block.futurepresentpast.the_table_of_time": "The Table of Time",
 
   "futurepresentpast.configuration.title": "Future-present-past Configs",
   "futurepresentpast.configuration.section.futurepresentpast.common.toml": "Future-present-past Configs",
